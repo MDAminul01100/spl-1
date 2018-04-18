@@ -65,14 +65,16 @@ bitset<32> Ch(bitset<32> x,bitset<32> y,bitset<32> z)
 
 bitset<32> Maj(bitset<32> x, bitset<32> y, bitset<32> z)
 {
-    return (x & y) ^ (y & z) ^ (z & x);
+    return (x & y) ^ (x & z) ^ (y & z);
 }
 
 bitset<32> add(bitset<32> a, bitset<32> b)
 {
     unsigned long c = a.to_ulong();
     unsigned long d = b.to_ulong();
-    return bitset<32>((c + d) % 4294967296);
+    bitset <32> ab ;
+    ab = (c + d) ;
+    return ab;
 
 }
 
@@ -95,25 +97,30 @@ string binToHex(string hashInBin)
     return str;
 }
 
-
 string makingDigest(string messege)
 {
+    //cout << messege;
     bitset<32> words[64];
-
-    for(int i = 0,counter = 0;i < 16; i++)
+    int counter = 0;
+    for(int i = 0;i < 16; i++)
     {
-        for(int j = 15; j >= 0; j--)
+        for(int j = 31; j >=0; j--)
         {
-            words[i][j] = messege[counter];
+            words[i][j] = messege[counter] - '0';
             counter++;
         }
+        //cout << words[i].to_ulong() << endl;
+        words[0] &= 0xffffffff;
+       // cout << words[i] << "   " << words[i].to_ulong() << endl;
     }
+    //cout << words[0] << "   "; //<< words[0].to_ulong() << endl;
+
     for (int k = 16; k < 64; k++)
     {
         bitset<32> s0 = rotateRight(words[k - 15], 7) ^ rotateRight(words[k - 15], 18) ^ (words[k - 15] >> 3);
         bitset<32> s1 = rotateRight(words[k - 2], 17) ^ rotateRight(words[k - 2], 19) ^ (words[k - 2] >> 10);
         words[k] = add(add(words[k - 16], s0), add(words[k - 7], s1));
-
+        //cout << words[k].to_ulong() << endl;
     }
     bitset<32> a, b, c, d, e, f, g, h;
 
@@ -129,8 +136,8 @@ string makingDigest(string messege)
 
     for(int t = 0; t < 64; t++)
     {
-        bitset<32> s1 = rotateRight(e,6) ^ rotateRight(e,11) ^ rotateRight(e,25);
-        bitset<32> temp1 = add( h , add( s1 , add( Ch(e,f,g) , add( constants[t] , words[t] ) ) ) );
+        bitset<32> s1 = rotateRight(e,6) ^ rotateRight(e,11) ^ rotateRight(e,25);cout << s1.to_ulong() << endl;
+        bitset<32> temp1 = add( h , add( s1 , add( Ch(e,f,g) , add( constants[t] , words[t] ) ) ) );//cout << temp1.to_ulong() << endl;
         bitset<32> s0 = rotateRight(e,2) ^ rotateRight(e,13) ^ rotateRight(e,22);
         bitset<32> temp2 = add(s0, Maj(a,b,c));
         h = g;
@@ -166,5 +173,6 @@ int main()
 
     string processedSms = paddingMessage(str);
     cout << makingDigest(processedSms) << endl;
+
     return 0;
 }
