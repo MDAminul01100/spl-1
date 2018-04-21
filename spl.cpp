@@ -81,7 +81,6 @@ bitset<32> add(bitset<32> a, bitset<32> b)
 string binToHex(string hashInBin)
 {
     string digits[16] = {"0","1","2","3", "4", "5", "6", "7","8", "9", "A", "B", "C", "D", "E", "F"};
-    //int x = 0;
     string str;
     for(int i = 0; i < hashInBin.size(); i+=4)
     {
@@ -99,7 +98,6 @@ string binToHex(string hashInBin)
 
 string makingDigest(string messege)
 {
-    //cout << messege;
     bitset<32> words[64];
     int counter = 0;
     for(int i = 0;i < 16; i++)
@@ -109,18 +107,15 @@ string makingDigest(string messege)
             words[i][j] = messege[counter] - '0';
             counter++;
         }
-        //cout << words[i].to_ulong() << endl;
         words[0] &= 0xffffffff;
-       // cout << words[i] << "   " << words[i].to_ulong() << endl;
+
     }
-    //cout << words[0] << "   "; //<< words[0].to_ulong() << endl;
 
     for (int k = 16; k < 64; k++)
     {
         bitset<32> s0 = rotateRight(words[k - 15], 7) ^ rotateRight(words[k - 15], 18) ^ (words[k - 15] >> 3);
         bitset<32> s1 = rotateRight(words[k - 2], 17) ^ rotateRight(words[k - 2], 19) ^ (words[k - 2] >> 10);
         words[k] = add(add(words[k - 16], s0), add(words[k - 7], s1));
-        //cout << words[k].to_ulong() << endl;
     }
     bitset<32> a, b, c, d, e, f, g, h;
 
@@ -133,13 +128,12 @@ string makingDigest(string messege)
     g = H[6];
     h = H[7];
 
-
     for(int t = 0; t < 64; t++)
     {
-        bitset<32> s1 = rotateRight(e,6) ^ rotateRight(e,11) ^ rotateRight(e,25);cout << s1.to_ulong() << endl;
-        bitset<32> temp1 = add( h , add( s1 , add( Ch(e,f,g) , add( constants[t] , words[t] ) ) ) );//cout << temp1.to_ulong() << endl;
-        bitset<32> s0 = rotateRight(e,2) ^ rotateRight(e,13) ^ rotateRight(e,22);
-        bitset<32> temp2 = add(s0, Maj(a,b,c));
+        bitset<32> EPS1 = rotateRight(e,6) ^ rotateRight(e,11) ^ rotateRight(e,25);
+        bitset<32> temp1 = add( h , add( EPS1 , add( Ch(e,f,g) , add( constants[t] , words[t] ) ) ) );
+        bitset<32> EPS0 = rotateRight(a,2) ^ rotateRight(a,13) ^ rotateRight(a,22);
+        bitset<32> temp2 = add(EPS0, Maj(a,b,c));
         h = g;
         g = f;
         f = e;
@@ -163,8 +157,6 @@ string makingDigest(string messege)
 
     return binToHex(hashInBin);
 }
-
-
 
 int main()
 {
