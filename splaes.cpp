@@ -1,14 +1,17 @@
 #include<iostream>
-
+#include<stdio.h>
+#include<bitset>
 using namespace std;
 
 #define Nb 4
+#define xtime(x)   ((x<<1) ^ (((x>>7) & 1) * 0x1b))
 
 int Nk = 0, Nr = 0;
 
 unsigned char key[32], roundKey[240];
 
 unsigned char input[16], output[16], state[4][4];
+
 
 int sbox[256] =   {
 	//0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
@@ -55,10 +58,140 @@ int strlen(string str)
     return i;
 }
 
+void subBytes()
+{
+    for(int i = 0; i < 4; i++)
+       for(int j = 0; j < 4; j++)
+            state[i][j] = sbox[(int)state[i][j]];
+}
+
+void shiftRows()
+{
+    unsigned char temp;
+
+    temp=state[1][0];
+	state[1][0]=state[1][1];
+	state[1][1]=state[1][2];
+	state[1][2]=state[1][3];
+	state[1][3]=temp;
+
+	temp=state[2][0];
+	state[2][0]=state[2][2];
+	state[2][2]=temp;
+
+	temp=state[2][1];
+	state[2][1]=state[2][3];
+	state[2][3]=temp;
+
+	temp=state[3][0];
+	state[3][0]=state[3][3];
+	state[3][3]=state[3][2];
+	state[3][2]=state[3][1];
+	state[3][1]=temp;
+}
+
+
+
+void addRoundKey(int round)
+{
+    for(int i = 0; i < 4; i++)
+        for(int j = 0; j < 4; j++)
+            state[j][i] ^= roundKey[round * Nb * 4 + i*Nb + j];
+}
+
+
+void mixColumns()
+{
+    unsigned char temp1,temp;
+    for(int i = 0; i < 4; i++)
+    {
+        temp = state[0][i];
+        temp1 = state[0][i] ^ state[1][i] ^ state[2][i] ^ state[3][i] ;
+        state[0][i] ^= temp1 ^ xtime((state[0][i] ^ state[1][i])) ;
+        state[1][i] ^= temp1 ^ xtime((state[1][i] ^ state[2][i])) ;
+        state[2][i] ^= temp1 ^ xtime((state[2][i] ^ state[3][i])) ;
+        state[3][i] ^= temp1 ^ xtime((state[3][i] ^ temp)) ;
+    }
+}
+
+void makeCipher()
+{
+    for(int i = 0; i < 4; i++)
+        for(int j = 0; j < 4; j++)
+            state[j][i] = input[i*4 +j];
+
+    addRoundKey(0);
+
+    for(int i = 1; i < Nr; i++)
+    {
+        subBytes();
+        shiftRows();
+        mixColumns();
+        addRoundKey(i);
+    }
+    subBytes();
+    shiftRows();
+    addRoundKey(Nr);
+    for(int i = 0; i < 4; i++)
+       for(int j = 0; j < 4; j++)
+            output[i*4 + j] = state[j][i];
+}
+
 void KeyExpansion()
 {
+    for(int i=0;i<Nk*4;i++)
+        roundKey[i] = key[i];
 
+    for(int i=Nk; i < Nb*(Nr + 1); i++)
+    {
+        unsigned char temp[4];
+        for(int j = 0; j < 4; j++)
+            temp[j] = roundKey[(i-1)*4 + j];
+
+        if(i%Nk == 0)
+        {
+
+            unsigned char k = temp[0];
+            temp[0] = temp[1];
+            temp[1] = temp[2];
+            temp[2] = temp[3];
+            temp[3] = k;
+
+            for(int j = 0; j < 4; j++)
+                temp[j] = sbox[(int)temp[j]];
+
+            temp[0] = temp[0] ^ Rcon[i/Nk];
+        }
+        else if(Nk > 6 && (i%Nk) == 4)
+        {
+
+            for(int j = 0; j < 4; j++)
+                temp[j] = sbox[temp[j]];
+        }
+
+        for(int j = 0; j < 4; j++)
+            roundKey[i*4 + j] = roundKey[(i - Nk)*4 + j] ^ temp[j];
+    }
 }
+
+string binToHex(string hashInBin)
+{
+    string digits[16] = {"0","1","2","3", "4", "5", "6", "7","8", "9", "A", "B", "C", "D", "E", "F"};
+    string str;
+    for(int i = 0; i < hashInBin.size(); i+=4)
+    {
+        string subString = hashInBin.substr(i,4);
+        int x = 0;
+        if(subString.substr(0,1) == "1") x += 8;
+        if(subString.substr(1,1) == "1") x += 4;
+        if(subString.substr(2,1) == "1") x += 2;
+        if(subString.substr(3,1) == "1") x += 1;
+
+        str += digits[x];
+    }
+    return str;
+}
+
 int main()
 {
     int keyLenth;
@@ -71,22 +204,22 @@ int main()
     }
     Nk = keyLenth/32;
     Nr = Nk + 6;
-    /*
-    int faul;
-    cin >> faul;
-    //unsigned char temp[16] ;
-    string temp;
-    cout << "Enter the text to encrypt:" ;
-    getline(cin, temp);
 
-    unsigned char temp1[strlen(temp)] ;
-    for(int i = 0; i < strlen(temp); i++)
-        temp1[i] = temp[i];
-    */
     unsigned char temp[16] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09
                                 ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
-    for(int i = 0; i < keyLenth/8; i++)
+    unsigned char temp2[16]= {0x00  ,0x11  ,0x22  ,0x33  ,0x44  ,0x55  ,0x66  ,0x77  ,0x88  ,0x99
+                                ,0xaa  ,0xbb  ,0xcc  ,0xdd  ,0xee  ,0xff};
+    for(int i = 0; i < keyLenth/8; i++){
         key[i] = temp[i];
+        input[i] = temp2[i];
+    }
 
     KeyExpansion();
+    makeCipher();
+
+    for(int i=0;i<Nk*4;i++)
+	{
+        bitset<8> ch(output[i]);
+        cout << binToHex(ch.to_string()) << " " ;
+	}
 }
