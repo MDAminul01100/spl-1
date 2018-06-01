@@ -1,5 +1,6 @@
 #include<iostream>
 #include<bitset>
+#include<fstream>
 
 using namespace std;
 
@@ -67,6 +68,14 @@ int rsbox[256] = {
      0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef,
      0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
      0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d };
+
+int strlen(string str)
+{
+    int i;
+    for(i = 0; str[i] != '\0'; i++){}
+    return i;
+}
+
 void addRoundKey(int round)
 {
     for(int i = 0; i < 4; i++)
@@ -206,6 +215,70 @@ string binToHex(string hashInBin)
     return str;
 }
 
+void initialize()
+{
+    for(int i = 0; i < 16; i++)
+        input[i] = 0x00;
+}
+
+
+void inputToOutput()
+{
+
+    std::ifstream ifile("output.txt");
+    std::ofstream ofile("output1.txt");
+    string str;
+    const char *temp;
+    unsigned char *in;
+    bool flag = false;
+    if(ifile.is_open())
+    {
+        while(1)
+        {
+            string temp;
+            getline(ifile,temp);
+            str += temp;
+            if(ifile.eof())
+                break;
+        }
+        temp = str.c_str();
+        in = new unsigned char[strlen(temp)];
+        for(int i=0; i < strlen(temp); i++)
+            in[i] = temp[i];
+        int numberOfBlocks;
+
+        numberOfBlocks = strlen(temp)/16;
+        for(int i = 0; i < numberOfBlocks; i++)
+        {
+            initialize();
+            for(int j = 0; j < 16; j++)
+                input[j] = in[i*16 + j];
+            invCipher();
+            for(int i= 0; i < 16; i++)
+                ofile << output[i];
+        }
+        if(strlen(str) % 16 !=0)
+        {
+            initialize();int j = 0;
+            for(int i = numberOfBlocks*16l; i < strlen(str); i++)
+            {
+                input[j] = in[i];
+                j++;
+            }
+            //for(j = 0; j < 16; j++)
+            invCipher();
+            for(int i= 0; i < 16; i++)
+                ofile << output[i];
+        }
+
+
+    }
+    else
+        cout << "Error occured in input file.File not found!" << endl;
+
+}
+
+
 int main()
 {
     int keyLenth;
@@ -221,21 +294,13 @@ int main()
 
     unsigned char temp[16] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09
                                 ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
-    unsigned char temp2[16]= {0x69  ,0xc4  ,0xe0  ,0xd8  ,0x6a  ,0x7b  ,0x04  ,0x30  ,0xd8  ,0xcd
-                                ,0xb7  ,0x80  ,0x70  ,0xb4  ,0xc5  ,0x5a};
+
     for(int i = 0; i < keyLenth/8; i++){
         key[i] = temp[i];
-        input[i] = temp2[i];
+       // input[i] = temp2[i];
     }
 
     KeyExpansion();
-    invCipher();
-
-    for(int i=0;i<Nk*4;i++)
-	{
-        bitset<8> ch(output[i]);
-        cout << binToHex(ch.to_string()) << " " ;
-	}
+    inputToOutput();
 }
-
 
