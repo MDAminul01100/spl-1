@@ -1,6 +1,7 @@
 #include<iostream>
-#include<stdio.h>
+#include<fstream>
 #include<bitset>
+
 using namespace std;
 
 #define Nb 4
@@ -10,8 +11,8 @@ int Nk = 0, Nr = 0;
 
 unsigned char key[32], roundKey[240];
 
+//unsigned char input[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'}, output[16], state[4][4];
 unsigned char input[16], output[16], state[4][4];
-
 
 int sbox[256] =   {
 	//0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
@@ -191,6 +192,72 @@ string binToHex(string hashInBin)
     }
     return str;
 }
+void initialize()
+{
+    for(int i = 0; i < 16; i++)
+        input[i] = 0x00;
+}
+void inputToOutput()
+{
+
+    std::ifstream ifile("input.txt");
+    std::ofstream ofile("output.txt");
+    string str;
+    const char *temp;
+    unsigned char *in;
+    bool flag = false;
+    if(ifile.is_open())
+    {
+        while(1)
+        {
+            string temp;
+            getline(ifile,temp);
+            str += temp;
+            if(ifile.eof())
+                break;
+        }
+        temp = str.c_str();
+        in = new unsigned char[strlen(temp)];
+
+        for(int i=0; i < strlen(temp); i++)
+            in[i] = temp[i];
+        int numberOfBlocks;
+        numberOfBlocks = strlen(temp)/16;
+        //cout << numberOfBlocks;
+        for(int i = 0; i < numberOfBlocks; i++)
+        {
+            initialize();
+            for(int j = 0; j < 16; j++)
+            {
+                input[j] = in[i*16 + j];
+                cout << input[j];
+            }
+            makeCipher();
+            for(int i= 0; i < 16; i++)
+                ofile << output[i];
+        }
+        if(strlen(str) % 16 !=0)
+        {
+            initialize();int j = 0;
+            for(int i = numberOfBlocks*16; i < strlen(str); i++)
+            {
+                input[j] = in[i];cout << input[j];
+                j++;
+            }
+            for(int i = j; i < 16; i++)
+                input[i] = '0';
+            //cout << "good";
+            makeCipher();
+            for(int i= 0; i < 16; i++)
+                ofile << output[i];
+        }
+
+
+    }
+    else
+        cout << "Error occured in input file.File not found!" << endl;
+
+}
 
 int main()
 {
@@ -205,21 +272,14 @@ int main()
     Nk = keyLenth/32;
     Nr = Nk + 6;
 
-    unsigned char temp1[16] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09
+    unsigned char temp[16] = {0x00  ,0x01  ,0x02  ,0x03  ,0x04  ,0x05  ,0x06  ,0x07  ,0x08  ,0x09
                                 ,0x0a  ,0x0b  ,0x0c  ,0x0d  ,0x0e  ,0x0f};
-    unsigned char temp2[16]= {0x00  ,0x11  ,0x22  ,0x33  ,0x44  ,0x55  ,0x66  ,0x77  ,0x88  ,0x99
-                                ,0xaa  ,0xbb  ,0xcc  ,0xdd  ,0xee  ,0xff};
+
     for(int i = 0; i < keyLenth/8; i++){
-        key[i] = temp1[i];
-        input[i] = temp2[i];
+        key[i] = temp[i];
+
     }
-
     KeyExpansion();
-    makeCipher();
+    inputToOutput();
 
-    for(int i=0;i<Nk*4;i++)
-	{
-        bitset<8> ch(output[i]);
-        cout << binToHex(ch.to_string()) << " " ;
-	}
 }
