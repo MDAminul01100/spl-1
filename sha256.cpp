@@ -162,9 +162,9 @@ int main()
 {
     string str;
     cout << "Please enter a text.(Not more than 64 character)" << endl;
-    cin >> str;
+    getline(cin,str);
     while(strlen(str) > 64)
-        cin >> str;
+        getline(cin,str);
 
     string processedSms = paddingMessage(str);
     cout << makingDigest(processedSms) << endl;
