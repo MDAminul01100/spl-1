@@ -195,35 +195,41 @@ string binToHex(string hashInBin)
 void initialize()
 {
     for(int i = 0; i < 16; i++)
-        input[i] = 0x00;
+        input[i] = '0';
 }
+//I am Aminul Islam and I read in IIT,DU.
 void inputToOutput()
 {
+    cout << "Input File: " ;
+    string name;
+    cin >> name;
+    std::ifstream ifile(name);
 
-    std::ifstream ifile("input.txt");
-    std::ofstream ofile("output.txt");
     string str;
     const char *temp;
     unsigned char *in;
     bool flag = false;
     if(ifile.is_open())
     {
-        while(1)
+        int v=0;
+        string temp;
+        while(getline(ifile,temp))
         {
-            string temp;
-            getline(ifile,temp);
+            if(v) str+="\n";
             str += temp;
-            if(ifile.eof())
-                break;
-        }
-        temp = str.c_str();
-        in = new unsigned char[strlen(temp)];
+            v=1;
 
-        for(int i=0; i < strlen(temp); i++)
+        }
+
+        temp = str.c_str();
+        in = new unsigned char[strlen(str)];
+
+        for(int i=0; i < strlen(str); i++)
             in[i] = temp[i];
-        int numberOfBlocks;
-        numberOfBlocks = strlen(temp)/16;
-        //cout << numberOfBlocks;
+        int numberOfBlocks = strlen(str)/16;
+
+        //cout << numberOfBlocks;
+        std::ofstream ofile("output.txt");
         for(int i = 0; i < numberOfBlocks; i++)
         {
             initialize();
@@ -241,15 +247,18 @@ void inputToOutput()
             initialize();int j = 0;
             for(int i = numberOfBlocks*16; i < strlen(str); i++)
             {
-                input[j] = in[i];cout << input[j];
+                input[j] = in[i];
+                cout<<input[j];
                 j++;
             }
             for(int i = j; i < 16; i++)
                 input[i] = '0';
             //cout << "good";
             makeCipher();
-            for(int i= 0; i < 16; i++)
+            for(int i= 0; i < 16; i++){
+
                 ofile << output[i];
+            }
         }
 
 
