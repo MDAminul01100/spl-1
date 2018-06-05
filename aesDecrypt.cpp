@@ -150,14 +150,12 @@ void invShiftRows()
 {
 	unsigned char temp;
 
-	// Rotate first row 1 columns to right
 	temp=state[1][3];
 	state[1][3]=state[1][2];
 	state[1][2]=state[1][1];
 	state[1][1]=state[1][0];
 	state[1][0]=temp;
 
-	// Rotate second row 2 columns to right
 	temp=state[2][0];
 	state[2][0]=state[2][2];
 	state[2][2]=temp;
@@ -166,7 +164,6 @@ void invShiftRows()
 	state[2][1]=state[2][3];
 	state[2][3]=temp;
 
-	// Rotate third row 3 columns to right
 	temp=state[3][0];
 	state[3][0]=state[3][1];
 	state[3][1]=state[3][2];
@@ -218,49 +215,66 @@ string binToHex(string hashInBin)
 void initialize()
 {
     for(int i = 0; i < 16; i++)
-        input[i] = 0x00;
+        input[i] = '0';
 }
 
 
 void inputToOutput()
 {
-
-    std::ifstream ifile("output.txt");
-    std::ofstream ofile("output1.txt");
+    cout << "Input File: " ;
+    string name;
+    cin >> name;
+    std::ifstream ifile(name);
     string str;
     const char *temp;
     unsigned char *in;
     bool flag = false;
     if(ifile.is_open())
     {
-        while(1)
+        int v=0;
+        string temp;
+        while(getline(ifile,temp))
         {
-            string temp;
-            getline(ifile,temp);
+            if(v) str+="\n";
             str += temp;
-            if(ifile.eof())
-                break;
+            v=1;
         }
+        ifile.close();
         temp = str.c_str();
-        in = new unsigned char[strlen(temp)];
-        for(int i=0; i < strlen(temp); i++)
+        in = new unsigned char[strlen(str)];
+        for(int i=0; i < strlen(str); i++)
             in[i] = temp[i];
         int numberOfBlocks;
+        std::ofstream ofile("output1.txt");
 
-        numberOfBlocks = strlen(temp)/16;
-        for(int i = 0; i < numberOfBlocks; i++)
+        numberOfBlocks = strlen(str)/16;
+        for(int i = 0; i < numberOfBlocks - 1; i++)
         {
             initialize();
             for(int j = 0; j < 16; j++)
                 input[j] = in[i*16 + j];
             invCipher();
             for(int i= 0; i < 16; i++)
+            {
                 ofile << output[i];
+            }
         }
+        initialize();
+        for(int j = 0; j < 16; j++)
+            input[j] = in[(numberOfBlocks - 1)*16 + j];
+        invCipher();
+        for(int i= 0; i < 16; i++)
+        {
+            if(output[i] == '0')
+                break;
+            ofile << output[i];
+        }
+
+        /*
         if(strlen(str) % 16 !=0)
         {
             initialize();int j = 0;
-            for(int i = numberOfBlocks*16l; i < strlen(str); i++)
+            for(int i = numberOfBlocks*16; i < strlen(str); i++)
             {
                 input[j] = in[i];
                 j++;
@@ -269,7 +283,7 @@ void inputToOutput()
             invCipher();
             for(int i= 0; i < 16; i++)
                 ofile << output[i];
-        }
+        }*/
 
 
     }
@@ -303,4 +317,5 @@ int main()
     KeyExpansion();
     inputToOutput();
 }
+
 
